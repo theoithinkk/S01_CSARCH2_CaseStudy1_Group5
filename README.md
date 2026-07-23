@@ -5,7 +5,7 @@ under **LRU** and **MRU** replacement side by side, on the same access sequence,
 visualises every access step-by-step. Built for a university computer-architecture
 course.
 
-- **Live demo:** _<!-- deployment link placeholder — e.g. https://machine7.vercel.app -->_
+- **Live demo:** `https://theoithinkk.github.io/S01_CSARCH2_CaseStudy1_Group5/`
 - **Video walkthrough:** _<!-- YouTube demo link placeholder -->_
 
 Stack: **React 18 · Vite · TypeScript · Tailwind CSS · Framer Motion**.
@@ -32,9 +32,11 @@ npm run preview  # serve the built dist/ locally
 `vite.config.ts` sets `base: './'` so asset paths are **relative** — the same build
 works both at a domain root (Vercel) and under a sub-path (GitHub Pages).
 
-- **Vercel:** framework preset *Vite*, build `npm run build`, output `dist/`.
-- **GitHub Pages:** `npm run build`, publish `dist/`. Relative base means no extra
-  config is required even when served from `https://<user>.github.io/<repo>/`.
+- **GitHub Pages (current):** `.github/workflows/deploy.yml` builds and publishes
+  `dist/` to Pages automatically on every push to `main`. One-time setup: repo
+  **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+- **Vercel (alternative):** import the repo at vercel.com, framework preset *Vite*,
+  build `npm run build`, output `dist/` — no extra config needed.
 
 ---
 
