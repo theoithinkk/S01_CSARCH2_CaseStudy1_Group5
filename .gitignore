@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+.vercel/
+
+# local research/notes — not part of the submission
+docs/
