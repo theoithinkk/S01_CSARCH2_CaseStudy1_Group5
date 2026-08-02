@@ -1,5 +1,5 @@
 // ============================================================
-// Machine 7 — timing & statistics
+// Machine 7 - timing & statistics
 // ============================================================
 import type { CacheConfig, Policy, Stats, Timing } from './types';
 

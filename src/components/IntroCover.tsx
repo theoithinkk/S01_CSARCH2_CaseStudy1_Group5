@@ -1,5 +1,5 @@
 // ============================================================
-// IntroCover — the landing screen styled as a retail PRODUCT BOX.
+// IntroCover - the landing screen styled as a retail PRODUCT BOX.
 // A boxed "product" (branding, chip artwork, feature list, barcode)
 // sits on a calm backdrop. Clicking START opens the box lid and lifts
 // it away to reveal the simulator.
@@ -127,12 +127,12 @@ export default function IntroCover({ onEnter }: IntroCoverProps) {
               style={{ background: 'linear-gradient(115deg, rgba(255,255,255,0.05), transparent 40%)' }}
             />
 
-            <div className="flex flex-col items-center px-6 pb-6 pt-4 text-center">
+            <div className="flex flex-col items-center px-4 pb-5 pt-4 text-center sm:px-6 sm:pb-6">
               <span className="silk text-[10px]" style={{ color: 'var(--text-faint)' }}>
                 CACHE MEMORY MACHINE
               </span>
-              <h1 className="mt-1 text-[46px] font-black leading-none tracking-[-0.02em]" style={{ color: 'var(--text)' }}>
-                MACHINE&nbsp;7
+              <h1 className="pixel mt-2 text-[26px] font-bold leading-tight sm:text-[32px]" style={{ color: 'var(--text)' }}>
+                MACHINE 7
               </h1>
               <p className="mt-2 text-[13px]" style={{ color: 'var(--text-muted)' }}>
                 4-Way Set-Associative Cache Simulator

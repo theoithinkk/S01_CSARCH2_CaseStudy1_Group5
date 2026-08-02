@@ -2,7 +2,7 @@
 
 /** Tag as uppercase hex with 0x prefix, e.g. 0x3F. */
 export const hex = (n: number | null): string =>
-  n === null || n === undefined ? '—' : `0x${n.toString(16).toUpperCase()}`;
+  n === null || n === undefined ? '-' : `0x${n.toString(16).toUpperCase()}`;
 
 /** Percentage with 1 decimal, e.g. 33.3%. */
 export const pct = (rate: number): string => `${(rate * 100).toFixed(1)}%`;

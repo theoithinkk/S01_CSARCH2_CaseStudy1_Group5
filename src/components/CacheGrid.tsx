@@ -1,6 +1,6 @@
 // ============================================================
-// CacheGrid / PolicyCachePanel — sets × ways grid for one policy.
-// Colored top accent bar keeps LRU (blue) vs MRU (violet) distinct (§4).
+// CacheGrid / PolicyCachePanel - sets × ways grid for one policy.
+// Colored top accent bar keeps LRU (blue) vs MRU (violet) distinct.
 // ============================================================
 import type { CacheConfig, LineSnapshot, Policy, TraceStep } from '../engine/types';
 import CacheCell, { type CellState } from './CacheCell';
@@ -48,7 +48,7 @@ export default function CacheGrid({ policy, accentVar, config, step, hits, misse
     <section className="chip hover-lift overflow-hidden">
       {/* Accent identity bar */}
       <div className="h-1 w-full" style={{ background: accentVar }} />
-      {/* Panel header — silkscreen chip label */}
+      {/* Panel header - silkscreen chip label */}
       <div
         className="flex items-center justify-between px-3.5 py-2.5"
         style={{ borderBottom: '1px solid var(--border)' }}
@@ -69,14 +69,14 @@ export default function CacheGrid({ policy, accentVar, config, step, hits, misse
         </div>
       </div>
 
-      {/* Grid — the silicon die */}
+      {/* Grid - the silicon die */}
       <div className="overflow-x-auto p-4 thin-scroll" style={{ background: 'var(--surface)' }}>
         {/* Way index header */}
         <div className="mb-2 flex gap-3 pl-[48px]">
           {Array.from({ length: ways }, (_, w) => (
             <div
               key={w}
-              className="min-w-[68px] flex-1 text-center font-mono text-[10px] uppercase tracking-[0.08em]"
+              className="min-w-[56px] flex-1 text-center font-mono text-[10px] uppercase tracking-[0.08em] sm:min-w-[68px]"
               style={{ color: 'var(--text-faint)' }}
             >
               way {w}
@@ -109,7 +109,7 @@ export default function CacheGrid({ policy, accentVar, config, step, hits, misse
                     const blockNumber =
                       line.valid && line.tag !== null ? line.tag * numSets + set.setIndex : null;
                     return (
-                      <div key={wayIndex} className="min-w-[68px] flex-1">
+                      <div key={wayIndex} className="min-w-[56px] flex-1 sm:min-w-[68px]">
                         <CacheCell
                           line={line}
                           state={state}

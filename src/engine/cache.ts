@@ -1,7 +1,7 @@
 // ============================================================
-// Machine 7 — pure N-way set-associative cache engine
+// Machine 7 - pure N-way set-associative cache engine
 // Deterministic: (config, sequence, policy) -> full trace + stats.
-// No framework imports — see src/engine/__tests__ for worked examples.
+// No framework imports - see src/engine/__tests__ for worked examples.
 // ============================================================
 import type {
   CacheConfig,
@@ -126,13 +126,13 @@ export function simulate(
     }
 
     if (matched >= 0) {
-      // HIT — refresh recency.
+      // HIT - refresh recency.
       result = 'hit';
       wayIndex = matched;
       set[matched].timestamp = globalTime;
       hits += 1;
     } else {
-      // MISS — allocate. Prefer an empty way; otherwise evict per policy.
+      // MISS - allocate. Prefer an empty way; otherwise evict per policy.
       result = 'miss';
       misses += 1;
       let target = set.findIndex((l) => !l.valid);

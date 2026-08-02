@@ -1,5 +1,5 @@
 // ============================================================
-// CurrentAccess — the "what is happening right now" readout.
+// CurrentAccess - the "what is happening right now" readout.
 // The accessed MEMORY BLOCK is drawn as a physical block that maps to
 // (set, tag); each policy's result shows as a status LED chip.
 // ============================================================

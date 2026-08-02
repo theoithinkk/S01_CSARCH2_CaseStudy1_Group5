@@ -1,5 +1,5 @@
 // ============================================================
-// CircuitBackground — a DYNAMIC but calm backdrop.
+// CircuitBackground - a DYNAMIC but calm backdrop.
 // Inspired by Kokonut UI "Beams Background" (drifting blurred light
 // beams, additively blended on near-black) + manus.im soft aurora,
 // over a faint static PCB grid so it still reads as a circuit board.
@@ -41,7 +41,7 @@ export default function CircuitBackground() {
     if (!ctx) return;
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    // Render at reduced resolution — everything is blurred, so it's free perf.
+    // Render at reduced resolution - everything is blurred, so it's free perf.
     const SCALE = 0.6;
 
     let W = 0;

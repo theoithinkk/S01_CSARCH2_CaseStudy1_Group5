@@ -1,5 +1,5 @@
 // ============================================================
-// TraceLog — the access trace, styled as a TERMINAL / serial console.
+// TraceLog - the access trace, styled as a TERMINAL / serial console.
 // Window chrome (traffic lights), phosphor-green mono output, a prompt
 // per line, the current line highlighted, and a blinking cursor.
 // Click a line to seek. Auto-scrolls to the current access.
@@ -43,11 +43,12 @@ export default function TraceLog({ lru, mru, stepIndex, onSelect }: TraceLogProp
         <span className="h-3 w-3 rounded-full" style={{ background: '#ff5f56' }} />
         <span className="h-3 w-3 rounded-full" style={{ background: '#febc2e' }} />
         <span className="h-3 w-3 rounded-full" style={{ background: '#28c840' }} />
-        <span className="ml-2 font-mono text-[11.5px]" style={{ color: 'var(--term-dim)' }}>
-          m7@cache: ~/trace — serial monitor
+        <span className="ml-2 truncate font-mono text-[11.5px]" style={{ color: 'var(--term-dim)' }}>
+          m7@cache: ~/trace
         </span>
-        <span className="ml-auto font-mono text-[11px]" style={{ color: 'var(--term-dim)' }}>
-          {done}/{total} · click to seek
+        <span className="ml-auto shrink-0 whitespace-nowrap font-mono text-[11px]" style={{ color: 'var(--term-dim)' }}>
+          {done}/{total}
+          <span className="hidden sm:inline"> · click to seek</span>
         </span>
       </div>
 
@@ -63,7 +64,7 @@ export default function TraceLog({ lru, mru, stepIndex, onSelect }: TraceLogProp
           {`  #    blk   set  tag     lru        mru`}
         </div>
 
-        {/* Only reveal steps up to the current position — the trace builds
+        {/* Only reveal steps up to the current position - the trace builds
             line by line as the simulation runs. */}
         {lru.steps.slice(0, Math.max(0, stepIndex + 1)).map((ls, i) => {
           const ms = mru.steps[i];

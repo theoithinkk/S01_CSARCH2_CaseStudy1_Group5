@@ -1,5 +1,5 @@
 // ============================================================
-// Machine 7 — application shell & orchestration.
+// Machine 7 - application shell & orchestration.
 // The engine is pure; this file drives inputs, playback, and the
 // "circuit board" layout (config / caches / stats / trace zones).
 // ============================================================
@@ -18,11 +18,13 @@ import ThemeToggle from './components/ThemeToggle';
 import CurrentAccess from './components/CurrentAccess';
 import CircuitBackground from './components/CircuitBackground';
 import IntroCover from './components/IntroCover';
+import HowTo from './components/HowTo';
+import MiniCache from './components/MiniCache';
 
 const BASE_STEP_MS = 700; // 1× step duration
 
 export default function App() {
-  // Landing "cover" gate — the board is revealed by the intro.
+  // Landing "cover" gate - the board is revealed by the intro.
   const [entered, setEntered] = useState(false);
 
   // --- Config inputs ---
@@ -40,6 +42,18 @@ export default function App() {
   const [speed, setSpeed] = useState<Speed>(1);
   // Stats + trace stay hidden until the simulation is actually run.
   const [hasRun, setHasRun] = useState(false);
+
+  // Orientation panel, shown once the board opens and reopenable from the header.
+  const [showHowTo, setShowHowTo] = useState(false);
+  const handleEnter = useCallback(() => {
+    setEntered(true);
+    setShowHowTo(true);
+  }, []);
+
+  // On phones the cache grids scroll away well before the stats and trace do,
+  // so watch them and pin a condensed version once they leave the viewport.
+  const cacheRef = useRef<HTMLElement | null>(null);
+  const [cacheOffscreen, setCacheOffscreen] = useState(false);
 
   // --- Validation (config boundary) ---
   const blocksError = validateCacheBlocks(numCacheBlocks);
@@ -162,6 +176,20 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, [viewMode, playPause, stepForward, stepBack, changeSpeed]);
 
+  useEffect(() => {
+    const el = cacheRef.current;
+    if (!el) return;
+    // The sticky header covers the top of the viewport, so pull the root's top
+    // edge down past it. Without this the grids still count as "visible" while
+    // sitting underneath the header.
+    const obs = new IntersectionObserver(([entry]) => setCacheOffscreen(!entry.isIntersecting), {
+      threshold: 0,
+      rootMargin: '-140px 0px 0px 0px',
+    });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [entered, configValid]);
+
   const numSets = numCacheBlocks / LIMITS.associativity;
   const shown = Math.min(stepIndex + 1, total);
   const progress = total > 0 ? (shown / total) * 100 : 0;
@@ -177,22 +205,26 @@ export default function App() {
   return (
     <div className="circuit-bg min-h-screen">
       <CircuitBackground />
-      {!entered && <IntroCover onEnter={() => setEntered(true)} />}
+      {!entered && <IntroCover onEnter={handleEnter} />}
+      {entered && showHowTo && <HowTo onClose={() => setShowHowTo(false)} />}
+
+      <div className="board-frame">
       {/* ===== Header: board edge connector + power rail ===== */}
       <header
         className="sticky top-0 z-30 border-b-2"
         style={{ background: 'var(--bg)', borderColor: 'var(--copper)' }}
       >
         <div className="edge-pads h-[3px] w-full" />
-        <div className="flex h-16 items-center justify-between gap-3 px-4">
-          <div className="flex items-center gap-3">
+        {/* wraps to two rows once the transport controls no longer fit */}
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3 py-2 sm:px-4 sm:py-2.5">
+          <div className="flex items-center gap-2.5">
             <span
               className="led"
               style={{ color: 'var(--hit)', background: 'var(--hit)', width: 11, height: 11 }}
               aria-hidden
             />
             <div className="flex items-baseline gap-3">
-              <h1 className="text-[24px] font-black tracking-[-0.01em]" style={{ color: 'var(--text)' }}>
+              <h1 className="pixel text-[16px] font-bold sm:text-[20px]" style={{ color: 'var(--text)' }}>
                 MACHINE&nbsp;7
               </h1>
               <span
@@ -204,7 +236,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none sm:gap-3">
             {viewMode === 'step' ? (
               <TraceControls
                 playing={playing}
@@ -228,6 +260,15 @@ export default function App() {
                 Run to end
               </button>
             )}
+            <button
+              onClick={() => setShowHowTo(true)}
+              aria-label="How to use this simulator"
+              title="How it works"
+              className="btn flex h-8 w-8 items-center justify-center rounded-md border text-[13px] font-bold"
+              style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--text-muted)' }}
+            >
+              ?
+            </button>
             <ThemeToggle />
           </div>
         </div>
@@ -277,14 +318,14 @@ export default function App() {
         {sim ? (
           <>
             {/* Centered hero: the cache visualization */}
-            <section className="flex flex-col items-center gap-4">
+            <section ref={cacheRef} className="flex flex-col items-center gap-4">
               <div className="w-full max-w-[820px]">
                 <CurrentAccess lruStep={lruStep} mruStep={mruStep} shown={shown} total={total} viewMode={viewMode} />
               </div>
               <DualCacheView config={config} lru={sim.lru} mru={sim.mru} stepIndex={stepIndex} />
             </section>
 
-            {/* Secondary: stats + trace log — hidden until the sim is run */}
+            {/* Secondary: stats + trace log - hidden until the sim is run */}
             {hasRun ? (
               <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                 <StatsPanel lru={lruStats ?? sim.lru.stats} mru={mruStats ?? sim.mru.stats} />
@@ -320,6 +361,18 @@ export default function App() {
           </div>
         )}
       </main>
+      </div>
+
+      {sim && (
+        <MiniCache
+          lruStep={lruStep}
+          mruStep={mruStep}
+          associativity={LIMITS.associativity}
+          shown={shown}
+          total={total}
+          visible={entered && !showHowTo && hasRun && cacheOffscreen}
+        />
+      )}
     </div>
   );
 }

@@ -6,3 +6,4 @@ dist/
 
 # local research/notes — not part of the submission
 docs/
+.claude/

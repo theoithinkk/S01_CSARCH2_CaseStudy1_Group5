@@ -1,7 +1,7 @@
 // ============================================================
-// CacheCell — one way (cache block/line) within a set.
+// CacheCell - one way (cache block/line) within a set.
 // Calm by default: resting cells are low-contrast; only the ACTIVE
-// cell pops (colored ring + tint). State is never color-only — a pill
+// cell pops (colored ring + tint). State is never color-only - a pill
 // label appears on the active cell. Kept intentionally uncluttered.
 // ============================================================
 import { useEffect } from 'react';
@@ -93,7 +93,7 @@ export default function CacheCell({
       animate={controls}
       whileHover={reduce || isEmpty ? undefined : { y: -3, scale: 1.04, zIndex: 5 }}
       transition={{ type: 'spring', stiffness: 380, damping: 24 }}
-      className="relative flex min-h-[78px] min-w-[68px] cursor-default flex-col justify-between rounded-lg p-2.5"
+      className="relative flex min-h-[68px] min-w-[56px] cursor-default flex-col justify-between rounded-lg p-2 sm:min-h-[78px] sm:min-w-[68px] sm:p-2.5"
       style={{ background: bg, boxShadow: ring }}
       title={!isEmpty && blockNumber != null ? `block ${blockNumber} · tag ${hex(line.tag)}` : undefined}
     >

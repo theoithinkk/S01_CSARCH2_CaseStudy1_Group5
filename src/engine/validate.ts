@@ -1,5 +1,5 @@
 // ============================================================
-// Machine 7 — input validation at the config boundary.
+// Machine 7 - input validation at the config boundary.
 // ============================================================
 
 export const isPowerOfTwo = (n: number): boolean => Number.isInteger(n) && n > 0 && (n & (n - 1)) === 0;

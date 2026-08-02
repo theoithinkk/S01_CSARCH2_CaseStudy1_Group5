@@ -27,8 +27,9 @@ export default {
         'grid-line': 'var(--grid-line)',
       },
       fontFamily: {
-        sans: ['Space Grotesk', 'Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'Cascadia Code', 'Consolas', 'monospace'],
+        pixel: ['Silkscreen', 'ui-monospace', 'monospace'],
+        sans: ['Share Tech', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['Share Tech Mono', 'ui-monospace', 'Cascadia Code', 'Consolas', 'monospace'],
       },
     },
   },

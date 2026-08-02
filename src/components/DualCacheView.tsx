@@ -1,5 +1,5 @@
 // ============================================================
-// DualCacheView / ComparisonGrid — LRU | MRU panes in lockstep (§4).
+// Shows the LRU and MRU caches side by side, both on the same step.
 // ============================================================
 import type { CacheConfig, SimResult, TraceStep } from '../engine/types';
 import CacheGrid from './CacheGrid';

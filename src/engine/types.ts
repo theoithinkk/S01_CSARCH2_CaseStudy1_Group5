@@ -1,5 +1,5 @@
 // ============================================================
-// Machine 7 — engine type definitions
+// Machine 7 - engine type definitions
 // Pure, framework-agnostic types shared by the cache engine and UI.
 // ============================================================
 
@@ -8,7 +8,7 @@ export type Policy = 'LRU' | 'MRU';
 
 /**
  * Read/allocation policy. Per the Machine 7 brief this affects the miss
- * PENALTY (timing / AMAT) only — both policies allocate on miss.
+ * PENALTY (timing / AMAT) only - both policies allocate on miss.
  *   load-through:     miss penalty = Tm + Tb * blockSize
  *   non-load-through: miss penalty = Tm
  */
@@ -25,7 +25,7 @@ export interface CacheConfig {
   blockSize: number;
   /** Fixed associativity for Machine 7. */
   associativity: number;
-  /** Read policy — selects the miss penalty. */
+  /** Read policy - selects the miss penalty. */
   readPolicy: ReadPolicy;
 }
 

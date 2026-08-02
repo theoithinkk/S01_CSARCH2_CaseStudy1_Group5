@@ -1,5 +1,5 @@
 // ============================================================
-// ConfigPanel — a compact horizontal CONTROL BAR that sits under the
+// ConfigPanel - a compact horizontal CONTROL BAR that sits under the
 // header, so the cache visualization owns the center of the stage.
 // Validates power-of-2 / min-size at the boundary via engine/validate.
 // ============================================================
@@ -192,7 +192,7 @@ export default function ConfigPanel(props: ConfigPanelProps) {
       {testCase === 'custom' && (
         <div className="flex flex-col gap-1">
           <span className="silk text-[9px]" style={{ color: 'var(--text-faint)' }}>
-            Custom sequence — comma/space separated block numbers (0–1023)
+            Custom sequence - comma/space separated block numbers (0–1023)
           </span>
           <textarea
             value={customText}

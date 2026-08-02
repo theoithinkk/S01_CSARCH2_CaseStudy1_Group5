@@ -1,5 +1,5 @@
 // ============================================================
-// TraceControls — VisuAlgo-style transport cluster + speed chips (§6).
+// Transport cluster (skip/step/play) plus the speed chips.
 // Keyboard shortcuts are wired in App (Space, ←/→, +/-).
 // ============================================================
 export const SPEEDS = [0.5, 1, 2, 4] as const;
@@ -84,8 +84,9 @@ export default function TraceControls({
         </IconBtn>
       </div>
 
+      {/* speed chips are the first thing to go when width is tight */}
       {!compact && (
-        <div className="flex items-center gap-1 rounded-md border p-0.5" style={{ borderColor: 'var(--border)' }}>
+        <div className="hidden items-center gap-1 rounded-md border p-0.5 sm:flex" style={{ borderColor: 'var(--border)' }}>
           {SPEEDS.map((s) => (
             <button
               key={s}

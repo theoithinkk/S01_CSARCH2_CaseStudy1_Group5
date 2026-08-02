@@ -2,8 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fonts ship with the repo (src/fonts) so there is no CDN dependency.
+   Silkscreen is the 8-bit display face, Share Tech / Share Tech Mono carry
+   the body and all numeric readouts, Nanum Pen Script is the memo-sheet hand. */
+@font-face {
+  font-family: 'Silkscreen';
+  src: url('./fonts/silkscreen-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Silkscreen';
+  src: url('./fonts/silkscreen-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Share Tech';
+  src: url('./fonts/share-tech-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Share Tech Mono';
+  src: url('./fonts/share-tech-mono-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Nanum Pen Script';
+  src: url('./fonts/nanum-pen-script-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Bitmap faces blur when the renderer antialiases them onto fractional
+   pixels. Turning smoothing off keeps the 8-bit edges hard. */
+.pixel {
+  font-family: 'Silkscreen', ui-monospace, monospace;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+  font-smooth: never;
+  letter-spacing: 0.02em;
+}
+
 /* ============================================================
-   Machine 7 — "Circuit Board" theme.
+   Machine 7 - "Circuit Board" theme.
    Panels read as ICs/chips mounted on a PCB substrate, wired by
    copper traces. Dark = green FR-4 board (canonical). Light = white
    solder-mask board. Semantic colors read as status LEDs.
@@ -97,21 +146,57 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-family: 'Share Tech', ui-sans-serif, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 /* ============================================================
-   PCB substrate — copper trace grid + via dots, subtly.
+   PCB substrate - copper trace grid + via dots, subtly.
    ============================================================ */
 .circuit-bg {
   position: relative;
   background-color: var(--bg);
 }
 
+/* The whole app sits inside a bounded board rather than stretching edge to
+   edge. On wide monitors the leftover space then reads as the surface the
+   board is resting on instead of dead margin, and the header lines up with
+   the content underneath it. */
+.board-frame {
+  position: relative;
+  margin: 0 auto;
+  max-width: 1280px;
+  min-height: 100vh;
+}
+@media (min-width: 1024px) {
+  .board-frame {
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    box-shadow: 0 0 90px -30px rgba(0, 0, 0, 0.9);
+  }
+  /* gold edge-connector fingers running down both board edges */
+  .board-frame::before,
+  .board-frame::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    background-image: repeating-linear-gradient(180deg, var(--pad) 0 14px, transparent 14px 24px);
+    opacity: 0.22;
+    pointer-events: none;
+  }
+  .board-frame::before {
+    left: -6px;
+  }
+  .board-frame::after {
+    right: -6px;
+  }
+}
+
 /* ============================================================
-   Chip / IC package — the base panel surface.
+   Chip / IC package - the base panel surface.
    ============================================================ */
 .chip {
   position: relative;
@@ -146,9 +231,9 @@ body {
   opacity: 0.5;
 }
 
-/* Silkscreen label — printed-on-board text style */
+/* Silkscreen label - printed-on-board text style */
 .silk {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: 'Share Tech Mono', ui-monospace, monospace;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -164,7 +249,7 @@ body {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: 'Share Tech Mono', ui-monospace, monospace;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -195,7 +280,7 @@ body {
   overflow: hidden;
 }
 .paper-hand {
-  font-family: 'Kalam', 'Comic Sans MS', cursive;
+  font-family: 'Nanum Pen Script', 'Comic Sans MS', cursive;
 }
 
 /* ---- Terminal surface ---- */
@@ -256,7 +341,7 @@ body {
 }
 
 /* ============================================================
-   Board layout — a 2D arrangement so panels are not all stacked.
+   Board layout - a 2D arrangement so panels are not all stacked.
      mobile : single column (config → caches → stats → trace)
      lg     : [ config | caches ]
               [ stats  | caches ]

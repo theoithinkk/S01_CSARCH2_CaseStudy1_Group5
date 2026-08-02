@@ -1,4 +1,4 @@
-// Always-visible key mapping color + pill + border-style to state (§7).
+// Key for what each cell colour and border style means.
 const items = [
   { label: 'Hit', bg: 'var(--hit-bg)', border: 'var(--hit)', style: 'solid' },
   { label: 'Miss', bg: 'var(--miss-bg)', border: 'var(--miss)', style: 'solid' },

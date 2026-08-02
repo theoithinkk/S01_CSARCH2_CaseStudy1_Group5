@@ -1,5 +1,5 @@
 // ============================================================
-// Machine 7 — access-sequence generators
+// Machine 7 - access-sequence generators
 // n = total cache blocks (numCacheBlocks). See the Machine 7 brief.
 // ============================================================
 import type { TestCaseId } from './types';
@@ -21,7 +21,7 @@ export function sequential(n: number): number[] {
 
 /**
  * (b) Mid-repeat: 0..n-1, then 0..2n-1 twice, then the reverse of that pattern
- * (each segment reversed, kept in segment order — matches the brief's worked
+ * (each segment reversed, kept in segment order - matches the brief's worked
  * example n=4 -> 0,1,2,3, 0..7, 0..7, 3,2,1,0, 7..0, 7..0).
  */
 export function midRepeat(n: number): number[] {
@@ -56,7 +56,7 @@ export function random(count = 64, maxBlockExclusive = 1024, seed = Date.now()):
 
 /**
  * Parse a custom comma/space/newline-separated sequence.
- * Returns { blocks, errors } — invalid tokens and out-of-range values reported.
+ * Returns { blocks, errors } - invalid tokens and out-of-range values reported.
  */
 export function parseCustom(
   input: string,

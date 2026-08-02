@@ -1,5 +1,5 @@
 // ============================================================
-// StatsPanel — the run's numbers, styled as a NOTEPAD memo sheet:
+// StatsPanel - the run's numbers, styled as a NOTEPAD memo sheet:
 // ruled paper, red margin line, handwritten heading. Metric | LRU | MRU.
 // ============================================================
 import type { Stats } from '../engine/types';
@@ -53,7 +53,7 @@ export default function StatsPanel({ lru, mru }: StatsPanelProps) {
           ))}
         </div>
         <h2 className="paper-hand text-[24px] leading-none" style={{ color: 'var(--ink)' }}>
-          Stats — LRU vs MRU
+          Stats - LRU vs MRU
         </h2>
       </div>
 
@@ -74,20 +74,20 @@ export default function StatsPanel({ lru, mru }: StatsPanelProps) {
           style={{ height: ROW_H, color: 'var(--ink-faint)' }}
         >
           <span className="flex-1" />
-          <span className="w-24 text-right" style={{ color: '#3b5bdb' }}>
+          <span className="w-[62px] shrink-0 text-right sm:w-24" style={{ color: "#3b5bdb" }}>
             LRU
           </span>
-          <span className="w-24 text-right" style={{ color: '#9333ea' }}>
+          <span className="w-[62px] shrink-0 text-right sm:w-24" style={{ color: "#9333ea" }}>
             MRU
           </span>
         </div>
 
         {rows.map((row) => (
           <div key={row.label} className="paper-row flex items-center pl-8" style={{ height: ROW_H }}>
-            <span className="paper-hand flex-1 text-[17px]" style={{ color: 'var(--ink)' }}>
+            <span className="paper-hand flex-1 pr-2 text-[14px] leading-tight sm:text-[17px]" style={{ color: 'var(--ink)' }}>
               {row.label}
             </span>
-            <span className="w-24 text-right font-mono text-[14px] tabular-nums" style={{ color: 'var(--ink)' }}>
+            <span className="w-[62px] shrink-0 text-right font-mono text-[12px] tabular-nums sm:w-24 sm:text-[14px]" style={{ color: 'var(--ink)' }}>
               <span
                 className="rounded px-1"
                 style={winner(row, 'lru') ? { boxShadow: '0 0 0 1.5px #3b5bdb', color: '#3b5bdb' } : undefined}
@@ -95,7 +95,7 @@ export default function StatsPanel({ lru, mru }: StatsPanelProps) {
                 {row.lru}
               </span>
             </span>
-            <span className="w-24 text-right font-mono text-[14px] tabular-nums" style={{ color: 'var(--ink)' }}>
+            <span className="w-[62px] shrink-0 text-right font-mono text-[12px] tabular-nums sm:w-24 sm:text-[14px]" style={{ color: 'var(--ink)' }}>
               <span
                 className="rounded px-1"
                 style={winner(row, 'mru') ? { boxShadow: '0 0 0 1.5px #9333ea', color: '#9333ea' } : undefined}
