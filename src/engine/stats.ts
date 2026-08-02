@@ -12,13 +12,13 @@ export const DEFAULT_TIMING: Timing = {
 
 /**
  * Miss penalty in cycles.
- *   load-through:     Tm + Tb * blockSize   (full block transfer)
- *   non-load-through: Tm                    (first word only)
- * Note the load-through penalty scales with the configured block size, so the
- * oracle value (blockSize 4 → 14) and the default (blockSize 16 → 26) both hold.
+ *   load-through:     Tm                    (requested word forwarded on arrival)
+ *   non-load-through: Tm + Tb * blockSize   (wait for full block, then read)
+ * Only the non-load-through penalty scales with block size, since that policy
+ * waits out the entire transfer. (blockSize 4 → 14, blockSize 16 → 26.)
  */
 export function missPenalty(config: CacheConfig, timing: Timing = DEFAULT_TIMING): number {
-  if (config.readPolicy === 'load-through') {
+  if (config.readPolicy === 'non-load-through') {
     return timing.memAccess + timing.transferPerWord * config.blockSize;
   }
   return timing.memAccess;

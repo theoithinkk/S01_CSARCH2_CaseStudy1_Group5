@@ -70,9 +70,18 @@ tag      = floor(b / numSets)
 **Miss penalty**
 
 ```
-Load-through:      P_miss = Tm + Tb·B = 10 + B          (default B=16 → 26 cycles)
-Non-load-through:  P_miss = Tm         = 10 cycles
+Load-through:      P_miss = Tm             = 10 cycles  (independent of B)
+Non-load-through:  P_miss = Tm + Tb·B      = 10 + B     (default B=16 → 26 cycles)
 ```
+
+Under **load-through**, the requested word is forwarded to the CPU as soon as it
+arrives from memory; the remainder of the block continues loading behind it, so the
+CPU never waits for the full transfer. Under **non-load-through**, the entire block
+must land in the cache before the requested word can be read, so the whole
+block-transfer time `Tb·B` is on the critical path.
+
+**Load-through is therefore always the cheaper policy**, and the gap widens with
+block size — at `B=2` the two differ by 2 cycles, at `B=32` by 32.
 
 **AMAT** and total time:
 
@@ -83,20 +92,49 @@ TotalTime = Hits·Th + Misses·P_miss
 
 > **Design note — read policy.** Per the Machine 7 brief, the read policy affects the
 > **miss timing / AMAT only**; both policies allocate the block into the cache on a
-> miss (standard behaviour). Choosing *non-load-through* simply drops the block-transfer
-> term from the miss penalty, so hit/miss counts are identical across read policies and
-> only the timing changes.
+> miss (standard behaviour). Choosing *load-through* removes the block-transfer term
+> from the miss penalty, so hit/miss counts and final cache contents are **identical**
+> across read policies and only the timing changes.
 
 ### Correctness
 
-The engine (`src/engine/`) is pure and framework-agnostic, and is covered by a unit-test
-suite (`src/engine/__tests__/`, run with `npm run test`) that includes hand-worked
-examples confirming exact hit/miss traces (all exact):
+The engine (`src/engine/`) is pure and framework-agnostic: `simulate(config, sequence,
+policy)` takes a configuration and an access sequence and returns a deterministic array
+of per-step snapshots. The UI only replays that array, so correctness is fully decoupled
+from rendering.
 
-- LRU, 8 blocks, block size 4, seq `0,1,2,3,0,1,2,3,4,5,6,7` → 4 hits, 8 misses, 116
-  cycles, AMAT 9.67. ✓
-- Divergence at block 8: **LRU evicts tag 0** (oldest), **MRU evicts tag 3** (newest). ✓
-- Non-load-through of the same sequence → 84 cycles, AMAT 7.00. ✓
+Correctness was verified by hand-working traces on paper and comparing them against the
+simulator's step-by-step trace log, which prints the set, tag, and outcome of every
+access. The worked example below can be reproduced directly in the app by selecting
+**Custom** and entering the sequence.
+
+**Worked example** — 8 cache blocks (2 sets x 4 ways), block size 4 words,
+sequence `0,1,2,3,0,1,2,3,4,5,6,7`, LRU:
+
+| Steps | Blocks | Outcome | Reason |
+|---|---|---|---|
+| 1-4 | 0,1,2,3 | 4 misses | compulsory (cold) misses |
+| 5-8 | 0,1,2,3 | 4 hits | all four still resident |
+| 9-12 | 4,5,6,7 | 4 misses | new tags; sets still have free ways |
+
+Totals: **4 hits, 8 misses**, no evictions (8 distinct blocks, 8 lines).
+
+| Read policy | P_miss | Total time | AMAT |
+|---|---:|---:|---:|
+| Load-through | 10 | 84 | 7.00 |
+| Non-load-through | 10 + 4 = 14 | 116 | 9.67 |
+
+**Replacement divergence** — extending the sequence with block 8 (set 0, tag 4) fills
+set 0 and forces the first eviction. The two policies choose different victims from
+the same set state: **LRU evicts tag 0** (the oldest line), **MRU evicts tag 3** (the
+newest). Hit/miss counts remain identical through this step; only the resulting cache
+contents differ. This is visible in the app by stepping to the final access and
+comparing the two grids.
+
+**Read policy invariant** — switching load-through <-> non-load-through leaves every
+hit/miss outcome and every cache line byte-identical; only AMAT and total time change.
+This can be checked in the app by toggling the read policy and confirming the two cache
+grids do not move.
 
 ---
 
@@ -104,7 +142,7 @@ examples confirming exact hit/miss traces (all exact):
 
 All figures below come from **running this simulator** at the default configuration:
 **16 cache blocks (4 sets × 4 ways), block size 16 words, load-through** (miss penalty
-= 26 cycles). `n` = total cache blocks = 16.
+= 10 cycles). `n` = total cache blocks = 16.
 
 Note the key structural fact: with 4 sets, each set is the target of `1024 / 4 = 256`
 distinct memory blocks but holds only 4 ways. For the built-in sequences (which walk
@@ -118,8 +156,8 @@ diverge.
 |---|---:|---:|
 | Hits | 0 | **16** |
 | Miss rate | 100.0% | **75.0%** |
-| AMAT (cycles) | 26.00 | **19.75** |
-| Total time (cycles) | 1664 | **1264** |
+| AMAT (cycles) | 10.00 | **7.75** |
+| Total time (cycles) | 640 | **496** |
 
 **Why:** each set cycles through 8 tags but has 4 ways. LRU always evicts the
 least-recently-used line — which, in a linear cyclic scan, is precisely the line that
@@ -134,13 +172,15 @@ on the second pass. **MRU wins decisively on cyclic scans larger than the cache.
 |---|---:|---:|
 | Hits | 16 | **68** |
 | Hit rate | 10.0% | **42.5%** |
-| AMAT (cycles) | 23.50 | **15.37** |
-| Total time (cycles) | 3760 | **2460** |
+| AMAT (cycles) | 9.10 | **6.17** |
+| Total time (cycles) | 1456 | **988** |
 
 **Why:** the pattern is dominated by long cyclic runs plus their reversals, which is
-still adversarial for LRU for the same reason as (a). MRU's habit of sacrificing the
-newest line keeps a stable working set of older lines resident, so it captures far more
-temporal reuse across the repeated and reversed segments — over **4×** the hits of LRU.
+still adversarial for LRU for the same reason as (a). Reversal only helps a policy if
+the reversed working set *fits* in the set — here each reversed segment still sweeps 8
+tags through 4 ways, so LRU keeps evicting the block it is about to revisit. MRU's habit
+of sacrificing the newest line keeps a stable working set of older lines resident, so it
+captures far more temporal reuse — over **4×** the hits of LRU.
 
 ### Test case (c) — Random (64 accesses, block indices 0–1023, seeded)
 
@@ -148,14 +188,31 @@ temporal reuse across the repeated and reversed segments — over **4×** the hi
 |---|---:|---:|
 | Hits | 1 | 2 |
 | Hit rate | 1.6% | 3.1% |
-| AMAT (cycles) | 25.61 | 25.22 |
-| Total time (cycles) | 1639 | 1614 |
+| AMAT (cycles) | 9.86 | 9.72 |
+| Total time (cycles) | 631 | 622 |
 
 **Why:** with 64 random draws from 1024 blocks there is almost no locality to exploit,
-so both policies miss on nearly everything and land within a rounding error of each
-other. **When there is no reuse pattern, replacement policy barely matters** — the two
-policies are effectively tied. (The random sequence is re-seeded from the UI; exact
-counts vary per seed, but the "policies roughly tie" conclusion is stable.)
+so both policies miss on nearly everything. The one-hit difference here is **sampling
+noise, not a policy advantage** — re-seeding from the UI (*Regenerate*) moves the
+counts around and either policy may come out marginally ahead. **When there is no reuse
+pattern, replacement policy barely matters.**
+
+### Read policy comparison
+
+Same runs, same hit/miss counts, only the miss penalty changes
+(`P_miss = 10` vs `26` at `B=16`):
+
+| Test case | Policy | Total time — load-through | Total time — non-load-through |
+|---|---|---:|---:|
+| (a) Sequential | LRU | 640 | 1664 |
+| (a) Sequential | MRU | 496 | 1264 |
+| (b) Mid-repeat | LRU | 1456 | 3760 |
+| (b) Mid-repeat | MRU | 988 | 2460 |
+| (c) Random | LRU | 631 | 1639 |
+| (c) Random | MRU | 622 | 1614 |
+
+The cache array contents are byte-identical between the two columns — a useful
+correctness check, since read policy must not influence replacement decisions.
 
 ### Takeaways
 
@@ -167,8 +224,10 @@ counts vary per seed, but the "policies roughly tie" conclusion is stable.)
 3. **On random access both converge**, confirming that policy choice only matters when
    the access stream has exploitable temporal structure.
 4. **Read policy is orthogonal to hit/miss behaviour**: switching load-through ↔
-   non-load-through leaves every hit/miss identical and only rescales the miss penalty
-   (26 → 10 cycles), lowering every AMAT/total-time proportionally.
+   non-load-through leaves every hit/miss and every cache line identical, and only
+   rescales the miss penalty (10 → 26 cycles at `B=16`), raising every AMAT and total
+   time proportionally. Load-through is always the faster policy, and its advantage
+   grows with block size.
 
 ---
 
@@ -180,8 +239,9 @@ counts vary per seed, but the "policies roughly tie" conclusion is stable.)
 - **Two view modes** — *step-by-step animated trace* (transport controls: ⏮ ◀ ▶/⏸ ▶ ⏭,
   0.5×/1×/2×/4× speed) or *final snapshot*. Keyboard: `Space` play/pause, `←/→` step,
   `+/−` speed.
-- **Text trace log** (always present) — one line per access: step, block, set, tag, and
-  the LRU & MRU outcome (incl. evicted tag). Click a line to jump the player there.
+- **Text trace log** (always present, in both view modes) — one line per access: step,
+  block, set, tag, and the LRU & MRU outcome (incl. evicted tag). Click a line to jump
+  the player there.
 - **Stats table** — per policy: accesses, hits, misses, hit/miss rate, AMAT, total time,
   with a delta arrow marking the better column.
 - **Config** — block size, cache blocks (power-of-2 steppers, validated), read policy,
@@ -196,7 +256,7 @@ counts vary per seed, but the "policies roughly tie" conclusion is stable.)
 ```
 machine7/
   src/
-    engine/            # pure, framework-agnostic, unit-testable
+    engine/            # pure, framework-agnostic simulation core
       types.ts         # shared types
       cache.ts         # N-way set-assoc engine → deterministic trace + stats
       sequences.ts     # sequential / mid-repeat / random / custom generators
