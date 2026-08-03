@@ -13,13 +13,14 @@ export const DEFAULT_TIMING: Timing = {
 /**
  * Miss penalty (ns).
  *
- *   Non-load-through:
+*   Non-load-through:
  *     cache access + (memory access x words per block) + cache-to-CPU
- *     = Th + (Tm * B) + Th
+ *     = Th + (Tm * B) + Tc
  *
  *   Load-through:
  *     cache access + average(best case, worst case)
  *     = Th + (Tm + Tm*B) / 2
+ *     Best case the requested word arrives first (Tm), worst case last (Tm*B).
  */
 export function missPenalty(config: CacheConfig, timing: Timing = DEFAULT_TIMING): number {
   if (config.readPolicy === 'non-load-through') {
