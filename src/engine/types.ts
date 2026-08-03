@@ -90,7 +90,7 @@ export interface Stats {
   hitTime: number; // Th
   missPenalty: number; // P_miss - reported figure, drives AMAT
   missTime: number; // per-miss cost for total access time computation
-  totalHitTime: number; // hits * Th
+  totalHitTime: number; // hits * B * Th
   totalMissTime: number; // misses * missTime
   amat: number; // ns
   totalAccessTime: number; // totalHitTime + totalMissTime, ns
