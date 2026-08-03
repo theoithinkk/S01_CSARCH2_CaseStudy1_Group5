@@ -9,8 +9,8 @@ export type Policy = 'LRU' | 'MRU';
 /**
  * Read/allocation policy. Per the Machine 7 brief this affects the miss
  * PENALTY (timing / AMAT) only - both policies allocate on miss.
- *   load-through:     miss penalty = Tm + Tb * blockSize
- *   non-load-through: miss penalty = Tm
+ *   load-through:     Th + (Tm + Tm*blockSize) / 2   (average of best/worst case)
+ *   non-load-through: Th + (Tm * blockSize) + Th     (full block transfer)
  */
 export type ReadPolicy = 'load-through' | 'non-load-through';
 
@@ -21,7 +21,7 @@ export type AccessResult = 'hit' | 'miss';
 export interface CacheConfig {
   /** Total cache blocks (lines). Power of 2, min 4. #sets = numCacheBlocks / 4. */
   numCacheBlocks: number;
-  /** Block size in words. Power of 2, min 2. Affects load-through miss penalty. */
+  /** Block size in words. Power of 2, min 2. Affects both miss penalties. */
   blockSize: number;
   /** Fixed associativity for Machine 7. */
   associativity: number;
@@ -29,11 +29,11 @@ export interface CacheConfig {
   readPolicy: ReadPolicy;
 }
 
-/** Timing constants used to derive AMAT and total access time. */
+/** Timing constants used to derive AMAT and total access time (ns). */
 export interface Timing {
-  hitTime: number; // Th, cycles
-  memAccess: number; // Tm, cycles
-  cacheToCpu: number; // cache-to-CPU transfer, cycles
+  hitTime: number; // Th - cache access time
+  memAccess: number; // Tm - main memory access time, per word
+  cacheToCpu: number; // cache-to-CPU transfer
 }
 
 /** Snapshot of a single cache line (way) after an access. */

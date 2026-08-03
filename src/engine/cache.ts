@@ -1,7 +1,6 @@
 // ============================================================
 // Machine 7 - pure N-way set-associative cache engine
 // Deterministic: (config, sequence, policy) -> full trace + stats.
-// No framework imports - see src/engine/__tests__ for worked examples.
 // ============================================================
 import type {
   CacheConfig,

@@ -3,25 +3,32 @@
 // ============================================================
 import type { CacheConfig, Policy, Stats, Timing } from './types';
 
-/** Default timing constants. */
+/** Default timing constants (ns). */
 export const DEFAULT_TIMING: Timing = {
-  hitTime: 1, // Th
-  memAccess: 10, // Tm
-  cacheToCpu: 1,  // cache to CPU
+  hitTime: 1, // Th - cache access time
+  memAccess: 10, // Tm - main memory access time, per word
+  cacheToCpu: 1, // cache-to-CPU transfer
 };
 
 /**
- * Miss penalty in cycles.
- *   load-through:     Tm                    (requested word forwarded on arrival)
- *   non-load-through: Tm + Tb * blockSize   (wait for full block, then read)
- * Only the non-load-through penalty scales with block size, since that policy
- * waits out the entire transfer. (blockSize 4 → 14, blockSize 16 → 26.)
+ * Miss penalty (ns).
+ *
+ *   Non-load-through:
+ *     cache access + (memory access x words per block) + cache-to-CPU
+ *     = Th + (Tm * B) + Th
+ *
+ *   Load-through:
+ *     cache access + average(best case, worst case)
+ *     = Th + (Tm + Tm*B) / 2
  */
 export function missPenalty(config: CacheConfig, timing: Timing = DEFAULT_TIMING): number {
   if (config.readPolicy === 'non-load-through') {
     return timing.hitTime + timing.memAccess * config.blockSize + timing.cacheToCpu;
   }
-  return timing.memAccess;
+
+  const best = timing.memAccess;
+  const worst = timing.memAccess * config.blockSize;
+  return timing.hitTime + (best + worst)/2;
 }
 
 /**
