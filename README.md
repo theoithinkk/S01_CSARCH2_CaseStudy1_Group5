@@ -48,9 +48,9 @@ works both at a domain root (Vercel) and under a sub-path (GitHub Pages).
 | Associativity | **4 ways** | fixed (Machine 7 = BSA) |
 | Cache blocks | **user, default 16** | power of 2, min 4 |
 | Number of sets | `cacheBlocks / 4` | 16 → 4 sets |
-| Block size | **user, default 16 words** | power of 2, min 2 |
+| Block size `B` | **user, default 16 words** | power of 2, min 2 |
 | Replacement | **LRU and MRU** | compared side by side |
-| Read policy | **Load-through / Non-load-through** | affects miss timing only |
+| Read policy | **Load-through / Non-load-through** | affects timing only |
 
 **Address mapping** (block `b`, `numSets` sets):
 
@@ -63,38 +63,56 @@ tag      = floor(b / numSets)
 
 | Symbol | Meaning | Value |
 |---|---|---|
-| `Th` | cache hit time | 1 cycle |
-| `Tm` | memory access time | 10 cycles |
-| `Tb` | block transfer rate | 1 cycle / word |
+| `Th` | cache access time | 1 ns |
+| `Tm` | memory access time, per word | 10 ns |
+| `Tc` | time to give a word to the CPU | 1 ns |
 
-**Miss penalty**
-
+### Miss penalty
+Cost of a single cache miss, in nanoseconds.
 ```
-Load-through:      P_miss = Tm             = 10 cycles  (independent of B)
-Non-load-through:  P_miss = Tm + Tb·B      = 10 + B     (default B=16 → 26 cycles)
-```
+Load-through:      Th + Average(best case, worst case)
+                 = Th + (Tm + Tm·B) / 2                
 
-Under **load-through**, the requested word is forwarded to the CPU as soon as it
-arrives from memory; the remainder of the block continues loading behind it, so the
-CPU never waits for the full transfer. Under **non-load-through**, the entire block
-must land in the cache before the requested word can be read, so the whole
-block-transfer time `Tb·B` is on the critical path.
-
-**Load-through is therefore always the cheaper policy**, and the gap widens with
-block size - at `B=2` the two differ by 2 cycles, at `B=32` by 32.
-
-**AMAT** and total time:
-
-```
-AMAT      = Th + MissRate · (P_miss − Th)
-TotalTime = Hits·Th + Misses·P_miss
+Non-load-through:  Th + (Tm · B) + Tc                  
 ```
 
-> **Design note - read policy.** Per the Machine 7 brief, the read policy affects the
-> **miss timing / AMAT only**; both policies allocate the block into the cache on a
-> miss (standard behaviour). Choosing *load-through* removes the block-transfer term
-> from the miss penalty, so hit/miss counts and final cache contents are **identical**
-> across read policies and only the timing changes.
+Under load-through the requested word is handed to the CPU as it arrives, so the wait depends on where that word sits in the block - best case it comes first (`Tm`), worst
+case last (`Tm·B`). The simulator charges the average of the two. 
+
+Under non-load-through the whole block must be transferred into the cache first, then the requested word is
+read back out to the CPU, which is the trailing `Tc`.
+
+| `B` | Load-through | Non-load-through |
+|---:|---:|---:|
+| 2 | 16 | 22 |
+| 4 | 26 | 42 |
+| 16 | 86 | 162 |
+| 32 | 166 | 322 |
+
+### Miss time
+
+A separate per-miss quantity, used only to build **total access time**:
+
+```
+Load-through:      Th + Tm                             
+Non-load-through:  Th + B · (Tm + Tc)                  
+```
+
+| `B` | Load-through | Non-load-through |
+|---:|---:|---:|
+| 2 | 11 | 23 |
+| 4 | 11 | 45 |
+| 16 | 11 | 177 |
+| 32 | 11 | 353 |
+
+### Derived Calculations
+
+```
+AMAT              = Th + MissRate · (P_miss − Th)      
+Total Hit Time    = Hits   · B · Th                    
+Total Miss Time   = Misses · MissTime                  
+TOTAL ACCESS TIME = Total Hit Time + Total Miss Time
+```
 
 ### Correctness
 
@@ -119,36 +137,35 @@ sequence `0,1,2,3,0,1,2,3,4,5,6,7`, LRU:
 
 Totals: **4 hits, 8 misses**, no evictions (8 distinct blocks, 8 lines).
 
-| Read policy | P_miss | Total time | AMAT |
-|---|---:|---:|---:|
-| Load-through | 10 | 84 | 7.00 |
-| Non-load-through | 10 + 4 = 14 | 116 | 9.67 |
+| Read policy | Miss penalty | AMAT | Miss time | Total hit time | Total miss time | Total access time |
+|---|---:|---:|---:|---:|---:|---:|
+| Load-through | 26 | 17.67 | 11 | 16 | 88 | 104 |
+| Non-load-through | 42 | 28.33 | 45 | 16 | 360 | 376 |
 
 **Replacement divergence** - extending the sequence with block 8 (set 0, tag 4) fills
 set 0 and forces the first eviction. The two policies choose different victims from
 the same set state: **LRU evicts tag 0** (the oldest line), **MRU evicts tag 3** (the
 newest). Hit/miss counts remain identical through this step; only the resulting cache
-contents differ. This is visible in the app by stepping to the final access and
-comparing the two grids.
+contents differ. Visible in the app by stepping to the final access and comparing the
+two grids.
 
 **Read policy invariant** - switching load-through <-> non-load-through leaves every
-hit/miss outcome and every cache line byte-identical; only AMAT and total time change.
-This can be checked in the app by toggling the read policy and confirming the two cache
-grids do not move.
+hit/miss outcome and every cache line byte-identical; only the timing figures change.
+Checkable in the app by toggling the read policy and confirming the two cache grids do
+not move.
 
 ---
 
 ## 3. LRU vs MRU - analysis (real simulator output)
 
 All figures below come from **running this simulator** at the default configuration:
-**16 cache blocks (4 sets × 4 ways), block size 16 words, load-through** (miss penalty
-= 10 cycles). `n` = total cache blocks = 16.
+**16 cache blocks (4 sets × 4 ways), block size 16 words, load-through**
+(miss penalty 86 ns, miss time 11 ns). `n` = total cache blocks = 16.
 
 Note the key structural fact: with 4 sets, each set is the target of `1024 / 4 = 256`
 distinct memory blocks but holds only 4 ways. For the built-in sequences (which walk
 `0 … 2n−1 = 0 … 31`), **8 distinct blocks map to each set** - double the 4 available
-ways. This 2× over-subscription per set is exactly the regime where LRU and MRU
-diverge.
+ways. This 2× over-subscription per set is exactly the regime where LRU and MRU diverge.
 
 ### Test case (a) - Sequential (`0…2n-1` twice; 64 accesses)
 
@@ -156,15 +173,17 @@ diverge.
 |---|---:|---:|
 | Hits | 0 | **16** |
 | Miss rate | 100.0% | **75.0%** |
-| AMAT (cycles) | 10.00 | **7.75** |
-| Total time (cycles) | 640 | **496** |
+| AMAT (ns) | 86.00 | **64.75** |
+| Total hit time (ns) | 0 | 256 |
+| Total miss time (ns) | 704 | 528 |
+| Total access time (ns) | **704** | 784 |
 
 **Why:** each set cycles through 8 tags but has 4 ways. LRU always evicts the
 least-recently-used line - which, in a linear cyclic scan, is precisely the line that
-will be requested *next* time around. LRU therefore evicts every block just before it
-is reused: **0% hit rate (pathological LRU thrashing).** MRU evicts the *most* recent
-line instead, protecting the 3 older lines in each set, so a quarter of the accesses hit
-on the second pass. **MRU wins decisively on cyclic scans larger than the cache.**
+will be requested *next* time around. LRU therefore evicts every block just before it is
+reused: **0% hit rate (pathological LRU thrashing).** MRU evicts the *most* recent line
+instead, protecting the 3 older lines in each set, so a quarter of the accesses hit on
+the second pass. **MRU wins decisively on cyclic scans larger than the cache.**
 
 ### Test case (b) - Mid-repeat (`0..n-1`, `0..2n-1` ×2, then each segment reversed; 160 accesses)
 
@@ -172,8 +191,10 @@ on the second pass. **MRU wins decisively on cyclic scans larger than the cache.
 |---|---:|---:|
 | Hits | 16 | **68** |
 | Hit rate | 10.0% | **42.5%** |
-| AMAT (cycles) | 9.10 | **6.17** |
-| Total time (cycles) | 1456 | **988** |
+| AMAT (ns) | 77.50 | **49.87** |
+| Total hit time (ns) | 256 | 1088 |
+| Total miss time (ns) | 1584 | 1012 |
+| Total access time (ns) | **1840** | 2100 |
 
 **Why:** the pattern is dominated by long cyclic runs plus their reversals, which is
 still adversarial for LRU for the same reason as (a). Reversal only helps a policy if
@@ -188,46 +209,49 @@ captures far more temporal reuse - over **4×** the hits of LRU.
 |---|---:|---:|
 | Hits | 1 | 2 |
 | Hit rate | 1.6% | 3.1% |
-| AMAT (cycles) | 9.86 | 9.72 |
-| Total time (cycles) | 631 | 622 |
+| AMAT (ns) | 84.67 | 83.34 |
+| Total hit time (ns) | 16 | 32 |
+| Total miss time (ns) | 693 | 682 |
+| Total access time (ns) | **709** | 714 |
 
 **Why:** with 64 random draws from 1024 blocks there is almost no locality to exploit,
 so both policies miss on nearly everything. The one-hit difference here is **sampling
-noise, not a policy advantage** - re-seeding from the UI (*Regenerate*) moves the
-counts around and either policy may come out marginally ahead. **When there is no reuse
+noise, not a policy advantage** - re-seeding from the UI (*Regenerate*) moves the counts
+around and either policy may come out marginally ahead. **When there is no reuse
 pattern, replacement policy barely matters.**
 
 ### Read policy comparison
 
-Same runs, same hit/miss counts, only the miss penalty changes
-(`P_miss = 10` vs `26` at `B=16`):
+Same runs, same hit/miss counts, same cache contents - only the timing changes.
 
-| Test case | Policy | Total time - load-through | Total time - non-load-through |
-|---|---|---:|---:|
-| (a) Sequential | LRU | 640 | 1664 |
-| (a) Sequential | MRU | 496 | 1264 |
-| (b) Mid-repeat | LRU | 1456 | 3760 |
-| (b) Mid-repeat | MRU | 988 | 2460 |
-| (c) Random | LRU | 631 | 1639 |
-| (c) Random | MRU | 622 | 1614 |
+| Test case | Policy | AMAT LT | AMAT NLT | Total LT | Total NLT |
+|---|---|---:|---:|---:|---:|
+| (a) Sequential | LRU | 86.00 | 162.00 | 704 | 11328 |
+| (a) Sequential | MRU | 64.75 | 121.75 | 784 | 8752 |
+| (b) Mid-repeat | LRU | 77.50 | 145.90 | 1840 | 25744 |
+| (b) Mid-repeat | MRU | 49.87 | 93.57 | 2100 | 17372 |
+| (c) Random | LRU | 84.67 | 159.48 | 709 | 11167 |
+| (c) Random | MRU | 83.34 | 156.97 | 714 | 11006 |
 
-The cache array contents are byte-identical between the two columns - a useful
+The cache array contents are byte-identical between the two read policies - a useful
 correctness check, since read policy must not influence replacement decisions.
 
 ### Takeaways
 
 1. **LRU is not universally best.** For working sets that cyclically exceed the per-set
    capacity, LRU degenerates to 0% hits while MRU recovers a meaningful share - the
-   textbook motivation for MRU (Machine 7 makes this visible interactively).
+   textbook motivation for MRU, which Machine 7 makes visible interactively.
 2. **MRU ≥ LRU on every structured case here**, because the built-in sequences are
-   cyclic/repeating and over-subscribe each set 2×.
+   cyclic/repeating and over-subscribe each set 2×. A working set that *fits* reverses
+   this: entering `0, 4, 8, 12` repeated as a custom sequence puts four blocks into one
+   four-way set, and LRU wins outright.
 3. **On random access both converge**, confirming that policy choice only matters when
    the access stream has exploitable temporal structure.
 4. **Read policy is orthogonal to hit/miss behaviour**: switching load-through ↔
    non-load-through leaves every hit/miss and every cache line identical, and only
-   rescales the miss penalty (10 → 26 cycles at `B=16`), raising every AMAT and total
-   time proportionally. Load-through is always the faster policy, and its advantage
-   grows with block size.
+   rescales the timing. Load-through is always the faster policy, and its advantage
+   grows with block size - the miss-time gap runs from 12 ns at `B=2` to 342 ns at
+   `B=32`.
 
 ---
 
@@ -242,8 +266,8 @@ correctness check, since read policy must not influence replacement decisions.
 - **Text trace log** (always present, in both view modes) - one line per access: step,
   block, set, tag, and the LRU & MRU outcome (incl. evicted tag). Click a line to jump
   the player there.
-- **Stats table** - per policy: accesses, hits, misses, hit/miss rate, AMAT, total time,
-  with a delta arrow marking the better column.
+- **Stats table** - per policy: accesses, hits, misses, hit/miss rate, AMAT, total
+  access time, with a delta arrow marking the better column.
 - **Config** - block size, cache blocks (power-of-2 steppers, validated), read policy,
   test case (a/b/c) or a validated **custom** comma-separated sequence.
 - **Dark-first theme** (light toggle, persisted) and full `prefers-reduced-motion`
@@ -260,7 +284,7 @@ machine7/
       types.ts         # shared types
       cache.ts         # N-way set-assoc engine → deterministic trace + stats
       sequences.ts     # sequential / mid-repeat / random / custom generators
-      stats.ts         # AMAT, miss penalty, totals (+ timing constants)
+      stats.ts         # miss penalty, miss time, AMAT, totals
       validate.ts      # power-of-2 / min-size boundary checks
       index.ts         # barrel
     components/
@@ -268,7 +292,7 @@ machine7/
       TraceControls · TraceLog · StatsPanel · ThemeToggle · Legend
       IntroCover · CircuitBackground
     fonts/             # self-hosted woff2 (Silkscreen, Share Tech, Nanum Pen Script)
-    lib/format.ts      # hex / percentage / cycle formatting
+    lib/format.ts      # hex / percentage / time formatting
     App.tsx · main.tsx · index.css
   index.html · vite.config.ts · tailwind.config.js · tsconfig.json
 ```
@@ -330,33 +354,38 @@ directly comparable step for step. This is what the side-by-side view uses.
 ### `stats.ts` - timing model
 
 **`DEFAULT_TIMING`**
-The cycle costs the simulator bills against: `hitTime` (Th) = 1, `memAccess` (Tm) = 10,
-`transferPerWord` (Tb) = 1 cycle per word.
+The costs the simulator bills against: `hitTime` (Th) = 1 ns, `memAccess` (Tm) = 10 ns
+per word, `cacheToCpu` (Tc) = 1 ns.
 
-**`missPenalty(config, timing?)` → cycles**
-The cost of one miss, which is where the read policy applies:
+**`missPenalty(config, timing?)` → ns**
+The per-miss figure shown in the stats table, and the one AMAT is derived from.
+Load-through returns `Th + (Tm + Tm·B)/2`, the average of the best case (requested word
+arrives first) and the worst case (arrives last). Non-load-through returns
+`Th + Tm·B + Tc`: the whole block transfers into the cache, then the requested word is
+read back out to the CPU.
 
-- **load-through** returns `Tm`. Memory forwards the requested word to the CPU the
-  moment it arrives, so the CPU resumes without waiting for the rest of the block.
-- **non-load-through** returns `Tm + Tb × blockSize`. The whole block must land in the
-  cache before the CPU may read from it, so the full transfer is on the critical path.
-
-Only the non-load-through penalty scales with block size; load-through is flat.
+**`missTime(config, timing?)` → ns**
+A separate per-miss quantity, used only to build total access time. Load-through returns
+`Th + Tm`; non-load-through returns `Th + B·(Tm + Tc)`. Multiplied by the miss count it
+gives the Total Miss Time.
 
 **`computeStats(policy, config, hits, misses, timing?)` → `Stats`**
 Derives the reported figures from the hit and miss counts:
 
 ```
-totalAccesses = hits + misses
-hitRate       = hits / totalAccesses
-missRate      = misses / totalAccesses
-AMAT          = Th + missRate × (P_miss − Th)
-totalTime     = hits × Th + misses × P_miss
+totalAccesses   = hits + misses
+hitRate         = hits / totalAccesses
+missRate        = misses / totalAccesses
+AMAT            = Th + missRate × (missPenalty − Th)
+totalHitTime    = hits × blockSize × Th
+totalMissTime   = misses × missTime
+totalAccessTime = totalHitTime + totalMissTime
 ```
 
-Rates fall back to `0` when there are no accesses, so an empty sequence does not
-divide by zero. Because it takes counts rather than a whole run, the UI can call it
-with the running totals at any step to show the statistics building up mid-playback.
+Rates fall back to `0` when there are no accesses, so an empty sequence does not divide
+by zero (AMAT then reports `Th`). Because it takes counts rather than a whole run, the
+UI can call it with the running totals at any step to show the statistics building up
+mid-playback.
 
 ### `sequences.ts` - access patterns
 
@@ -378,8 +407,8 @@ drawn from `0 … maxBlockExclusive−1` (default 1024) using `mulberry32`.
 **`parseCustom(input, maxBlockExclusive?)` → `{ blocks, errors }`**
 Reads a user-typed sequence split on commas and whitespace. Non-integers and
 out-of-range values are collected into `errors` rather than thrown, and empty input
-reports its own message, so the UI can show what is wrong while keeping the valid
-blocks it did parse.
+reports its own message, so the UI can show what is wrong while keeping the valid blocks
+it did parse.
 
 **`buildSequence(id, n, opts?)` → `{ blocks, errors }`**
 Dispatches on the selected test case (`sequential`, `mid-repeat`, `random`, `custom`)
@@ -398,8 +427,8 @@ associativity 4, and 1024 main-memory blocks.
 
 **`validateCacheBlocks(n)` / `validateBlockSize(n)`** - return an error string when a
 value breaks a rule (not a power of two, below the minimum, or not divisible by the
-associativity) and `null` when it is acceptable. `App` checks both before simulating
-and shows the message instead of running.
+associativity) and `null` when it is acceptable. `App` checks both before simulating and
+shows the message instead of running.
 
 ### Types worth knowing (`types.ts`)
 
@@ -408,5 +437,6 @@ and shows the message instead of running.
   and `misses`, and `sets`.
 - **`LineSnapshot`** - one way: `valid`, `tag`, `timestamp`, and `recencyRank`
   (`0` = most recently used, `-1` = empty).
-- **`Stats`** - the figures rendered in the results table, including `missPenalty` and
-  `amat` so the UI can show the timing model it used alongside the numbers.
+- **`Stats`** - the figures rendered in the results table: `missPenalty`, `missTime`,
+  `totalHitTime`, `totalMissTime`, `amat`, and `totalAccessTime`, so the UI can show the
+  timing model it used alongside the numbers.
