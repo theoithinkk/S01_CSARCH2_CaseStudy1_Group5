@@ -6,7 +6,7 @@ visualises every access step-by-step. Built for a university computer-architectu
 course.
 
 - **Live demo:** `https://theoithinkk.github.io/S01_CSARCH2_CaseStudy1_Group5/`
-- **Video walkthrough:** _<!-- YouTube demo link placeholder -->_
+- **Video walkthrough:** `https://youtu.be/QDBHMCa7Nws`
 
 Stack: **React 18 · Vite · TypeScript · Tailwind CSS · Framer Motion**.
 
