@@ -7,7 +7,7 @@ import type { CacheConfig, Policy, Stats, Timing } from './types';
 export const DEFAULT_TIMING: Timing = {
   hitTime: 1, // Th
   memAccess: 10, // Tm
-  transferPerWord: 1, // Tb (per word)
+  cacheToCpu: 1,  // cache to CPU
 };
 
 /**
@@ -19,7 +19,7 @@ export const DEFAULT_TIMING: Timing = {
  */
 export function missPenalty(config: CacheConfig, timing: Timing = DEFAULT_TIMING): number {
   if (config.readPolicy === 'non-load-through') {
-    return timing.memAccess + timing.transferPerWord * config.blockSize;
+    return timing.hitTime + timing.memAccess * config.blockSize + timing.cacheToCpu;
   }
   return timing.memAccess;
 }

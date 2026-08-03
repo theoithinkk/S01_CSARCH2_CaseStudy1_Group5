@@ -33,7 +33,7 @@ export interface CacheConfig {
 export interface Timing {
   hitTime: number; // Th, cycles
   memAccess: number; // Tm, cycles
-  transferPerWord: number; // Tb, cycles/word
+  cacheToCpu: number; // cache-to-CPU transfer, cycles
 }
 
 /** Snapshot of a single cache line (way) after an access. */
