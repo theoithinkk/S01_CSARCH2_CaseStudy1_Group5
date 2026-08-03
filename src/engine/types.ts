@@ -7,10 +7,13 @@
 export type Policy = 'LRU' | 'MRU';
 
 /**
- * Read/allocation policy. Per the Machine 7 brief this affects the miss
- * PENALTY (timing / AMAT) only - both policies allocate on miss.
- *   load-through:     Th + (Tm + Tm*blockSize) / 2   (average of best/worst case)
- *   non-load-through: Th + (Tm * blockSize) + Th     (full block transfer)
+ * Read/allocation policy. Affects timing only - both policies allocate on miss.
+ *   Miss penalty (drives AMAT):
+ *     load-through:     Th + (Tm + Tm*B) / 2      average of best/worst case
+ *     non-load-through: Th + (Tm * B) + Tc        full block transfer
+ *   Miss time (drives total access time):
+ *     load-through:     Th + Tm
+ *     non-load-through: Th + B * (Tm + Tc)
  */
 export type ReadPolicy = 'load-through' | 'non-load-through';
 
@@ -85,9 +88,12 @@ export interface Stats {
   hitRate: number; // 0..1
   missRate: number; // 0..1
   hitTime: number; // Th
-  missPenalty: number; // P_miss
-  amat: number; // cycles
-  totalAccessTime: number; // cycles
+  missPenalty: number; // P_miss - reported figure, drives AMAT
+  missTime: number; // per-miss cost for total access time computation
+  totalHitTime: number; // hits * Th
+  totalMissTime: number; // misses * missTime
+  amat: number; // ns
+  totalAccessTime: number; // totalHitTime + totalMissTime, ns
   blockSize: number;
 }
 

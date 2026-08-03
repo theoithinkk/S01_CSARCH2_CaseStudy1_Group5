@@ -108,8 +108,7 @@ export default function StatsPanel({ lru, mru }: StatsPanelProps) {
 
         {/* footnote in "pencil" */}
         <p className="paper-hand pb-4 pt-3 pl-8 text-[14px] leading-snug" style={{ color: 'var(--ink-faint)' }}>
-          Th=1, Tm=10, Tb=1/word · miss penalty = {lru.missPenalty} cyc ({lru.readPolicy}, block {lru.blockSize}w) ·
-          AMAT = Th + MissRate·(P_miss − Th)
+          Th=1ns, Tm=10ns, Tc=1ns · miss penalty = {lru.missPenalty} ns · miss time = {lru.missTime} ns/miss ({lru.readPolicy}, block {lru.blockSize}w) ·
         </p>
       </div>
     </div>
