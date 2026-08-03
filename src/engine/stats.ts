@@ -56,7 +56,7 @@ export function missTime(config: CacheConfig, timing: Timing = DEFAULT_TIMING): 
  *   AMAT             = Th + MissRate * (P_miss - Th)
  *                    note: this formula is equal to HitRate * Th + MissRate * P_miss
  *
- *   Total Hit Time   = hits * Th
+ *   Total Hit Time   = hits * B * Th
  *   Total Miss Time  = misses * missTime                     
  *   TOTAL ACCESS TIME = Total Hit Time + Total Miss Time
  *
@@ -77,7 +77,7 @@ export function computeStats(
 
   const amat = timing.hitTime + missRate * (pMiss - timing.hitTime);
 
-  const totalHitTime = hits * timing.hitTime;
+  const totalHitTime = hits * config.blockSize * timing.hitTime;
   const totalMissTime = misses * tMiss;
   const totalAccessTime = totalHitTime + totalMissTime;
 
