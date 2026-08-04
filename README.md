@@ -231,6 +231,11 @@ Same runs, same hit/miss counts, same cache contents - only the timing changes.
 The cache array contents are byte-identical between the two read policies - a useful
 correctness check, since read policy must not influence replacement decisions.
 
+### Output Screenshots
+ 
+Program output for all test cases (normal cases, special cases, edge cases, and parameter sweeps) is collected in
+**[Screenshots.pdf](Screenshots.pdf)**.
+
 ### Takeaways
 
 1. **LRU is not always better.** If a program uses more blocks than the cache can hold and repeatedly cycles through them, LRU may remove a block that will be needed again soon, causing more cache misses. In this situation, MRU removes the most recently used block instead, allowing the older blocks to stay in the cache and be reused. This is the type of workload that MRU is designed for.
