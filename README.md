@@ -29,14 +29,9 @@ npm run preview  # serve the built dist/ locally
 
 ### Deployment
 
-`vite.config.ts` sets `base: './'` so asset paths are **relative** - the same build
-works both at a domain root (Vercel) and under a sub-path (GitHub Pages).
-
-- **GitHub Pages (current):** `.github/workflows/deploy.yml` builds and publishes
+- **GitHub Pages:** `.github/workflows/deploy.yml` builds and publishes
   `dist/` to Pages automatically on every push to `main`. One-time setup: repo
   **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-- **Vercel (alternative):** import the repo at vercel.com, framework preset *Vite*,
-  build `npm run build`, output `dist/` - no extra config needed.
 
 ---
 
