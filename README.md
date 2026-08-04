@@ -233,20 +233,10 @@ correctness check, since read policy must not influence replacement decisions.
 
 ### Takeaways
 
-1. **LRU is not universally best.** For working sets that cyclically exceed the per-set
-   capacity, LRU degenerates to 0% hits while MRU recovers a meaningful share - the
-   textbook motivation for MRU, which Machine 7 makes visible interactively.
-2. **MRU ≥ LRU on every structured case here**, because the built-in sequences are
-   cyclic/repeating and over-subscribe each set 2×. A working set that *fits* reverses
-   this: entering `0, 4, 8, 12` repeated as a custom sequence puts four blocks into one
-   four-way set, and LRU wins outright.
-3. **On random access both converge**, confirming that policy choice only matters when
-   the access stream has exploitable temporal structure.
-4. **Read policy is orthogonal to hit/miss behaviour**: switching load-through ↔
-   non-load-through leaves every hit/miss and every cache line identical, and only
-   rescales the timing. Load-through is always the faster policy, and its advantage
-   grows with block size - the miss-time gap runs from 12 ns at `B=2` to 342 ns at
-   `B=32`.
+1. **LRU is not always better.** If a program uses more blocks than the cache can hold and repeatedly cycles through them, LRU may remove a block that will be needed again soon, causing more cache misses. In this situation, MRU removes the most recently used block instead, allowing the older blocks to stay in the cache and be reused. This is the type of workload that MRU is designed for.
+2. **MRU performs better in all three required test cases** because the test sequences repeatedly cycle through more blocks than the cache can store. This favors MRU's replacement strategy. However, MRU is **not always the better choice**. If a program repeatedly accesses the same small set of blocks while only occasionally loading a new block, LRU usually achieves more cache hits because it keeps the frequently used blocks in the cache.
+3. **With random memory accesses, LRU and MRU perform almost the same.** Since there is no predictable access pattern, neither replacement policy has an advantage. Any small difference in hit count is due to chance rather than the replacement algorithm itself.
+4. **The read policy does not affect cache hits or misses.** Whether load-through or non-load-through is used, the same blocks are stored in the cache and the hit/miss results remain the same. The only difference is execution time. Load-through is faster, and its performance advantage becomes larger as the block size increases.
 
 ---
 
